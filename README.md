@@ -17,6 +17,13 @@ npm run seed       # reinicia la base con los datos de demostración
 
 Variables: `PORT` y `TRANSVIDA_DB` (ruta del archivo SQLite).
 
+### Vercel
+
+`src/app.js` exporta por defecto el manejador de solicitudes, que Vercel usa como función. En Vercel
+solo `/tmp` admite escritura: la base se crea allí con los datos de demostración en cada instancia
+nueva y **los cambios no persisten** (sirve como demo, no para operación real). Para producción hay
+que usar una base externa.
+
 ### Cuentas de demostración (contraseña `demo1234`)
 
 | Usuario | Perfil | Pantalla inicial |

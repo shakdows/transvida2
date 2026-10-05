@@ -8,12 +8,12 @@ const routes = require('./routes');
 
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
-function createApp(db) {
+function createHandler(db) {
   const router = routes.build();
   // Rutas públicas (sin sesión).
   const PUBLIC = new Set(['POST /api/auth/login']);
 
-  return http.createServer(async (req, res) => {
+  return async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     const pathname = url.pathname;
     res.setHeader('X-Frame-Options', 'DENY');
@@ -59,7 +59,27 @@ function createApp(db) {
       console.error(err);
       return send(res, 500, { error: 'interno', message: 'Error interno' });
     }
-  });
+  };
 }
 
-module.exports = { createApp };
+const createApp = (db) => http.createServer(createHandler(db));
+
+// Entrada para plataformas serverless (Vercel): exportación por defecto = manejador.
+// La base se abre al primer uso. En Vercel solo /tmp admite escritura, por lo que los
+// datos de demostración se recrean en cada instancia nueva (no hay persistencia real).
+let lazy;
+function handler(req, res) {
+  if (!lazy) {
+    const { open } = require('./db');
+    const { seed } = require('./seed');
+    const file = process.env.TRANSVIDA_DB || (process.env.VERCEL ? '/tmp/transvida.db' : path.join(__dirname, '..', 'data', 'transvida.db'));
+    const db = open(file);
+    if (!db.get('SELECT id FROM users LIMIT 1')) seed(db);
+    lazy = createHandler(db);
+  }
+  return lazy(req, res);
+}
+
+module.exports = handler;
+module.exports.createApp = createApp;
+module.exports.createHandler = createHandler;
