@@ -2,7 +2,7 @@
 // Accesos indebidos a registros ajenos y aprobación de solicitudes propias.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { startServer, PNG, uuid } = require('./helpers');
+const { startServer, PNG } = require('./helpers');
 
 let s;
 test.before(async () => { s = await startServer(); });
@@ -43,8 +43,11 @@ test('Un conductor no accede a viajes ajenos modificando la URL o la solicitud',
   assert.equal((await d.get(`/api/files/${f.data.id}`)).status, 404);
   assert.equal((await d2.get(`/api/files/${f.data.id}`)).status, 200);
   // No puede usar el archivo de otro como comprobante propio.
-  const own = tripByCode('0003');
-  void own;
+  const ownTrip = s.db.get("SELECT id FROM trips WHERE driver_id = ? AND status = 'asignado'", s.ids.conductor);
+  s.db.run("UPDATE trips SET status = 'en_curso' WHERE id = ?", ownTrip.id);
+  const steal = await d.post('/api/expenses', { trip_id: ownTrip.id, category: 'peaje', amount: 5, receipt_file_id: f.data.id });
+  assert.equal(steal.status, 400);
+  s.db.run("UPDATE trips SET status = 'asignado' WHERE id = ?", ownTrip.id);
   // Intentos indebidos quedan registrados en la auditoría de accesos.
   const denied = s.db.get("SELECT COUNT(*) c FROM audit_log WHERE kind = 'acceso' AND user_id = ? AND action IN ('acceso_denegado','registro_no_disponible')", s.ids.conductor).c;
   assert.ok(denied >= 5);

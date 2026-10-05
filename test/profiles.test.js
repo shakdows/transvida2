@@ -3,7 +3,7 @@
 // y mediante solicitudes directas al servidor (no a través de la interfaz).
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { startServer, PNG } = require('./helpers');
+const { startServer } = require('./helpers');
 
 let s;
 test.before(async () => { s = await startServer(); });

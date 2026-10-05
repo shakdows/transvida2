@@ -52,6 +52,7 @@ const DEFAULT_CONFIG = {
 };
 
 const PUBLIC_CONFIG_KEYS = ['currency', 'expense_categories', 'incident_types', 'inspection_checklist',
+  'extraordinary_expense_threshold', 'extraordinary_categories',
   'inspection_min_photos', 'exception_types'];
 
 const nowIso = () => new Date().toISOString();
